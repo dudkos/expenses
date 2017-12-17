@@ -1,0 +1,56 @@
+spring:
+# Cloud. Need to be unique
+  application:
+    name: gateway
+  # Same JVM. Need to be unique
+  jmx:
+    default-domain: ${spring.application.name}
+
+eureka:
+  client:
+    serviceUrl:
+      defaultZone: http://localhost:8180/registry/eureka/
+    registerWithEureka: true
+
+hystrix:
+    command:
+        default:
+            execution:
+                isolation:
+                    thread:
+                        timeoutInMilliseconds: 15000
+expenses-service:
+  ribbon:
+    ReadTimeout: 10000
+
+zuul:
+  ignoredServices: '*'
+  host:
+    connect-timeout-millis: 20000
+    socket-timeout-millis: 20000
+
+  routes:
+    security-api:
+        path: /auth/**
+#        url: http://localhost:8081
+        url: http://localhost:8180/security-api
+        sensitiveHeaders:
+
+    search_api:
+        path: /search/**
+#        serviceId: search-service
+        url: http://localhost:8083/search-api
+        sensitiveHeaders:
+
+    expenses-service:
+        path: /expenses/**
+#        url: http://localhost:8083/expenses-service
+        serviceId: expenses-service
+        sensitiveHeaders:
+
+server:
+  port: 8083
+
+management:
+  security:
+    enabled: false
