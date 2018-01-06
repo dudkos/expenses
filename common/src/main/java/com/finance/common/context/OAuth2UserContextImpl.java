@@ -4,6 +4,7 @@ import com.finance.common.exception.ServiceException;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.provider.OAuth2Authentication;
+import org.springframework.util.StringUtils;
 
 import java.util.Map;
 
@@ -24,6 +25,12 @@ public class OAuth2UserContextImpl implements UserContext {
     }
 
     public String getUserName() {
+        String userName = getOAuth2AuthenticationFromContext().getName();
+
+        if(StringUtils.isEmpty(userName)) {
+            throw new ServiceException(HttpStatus.UNAUTHORIZED.value(), "Authentication error. User NAME is null or empty");
+        }
+
         return getOAuth2AuthenticationFromContext().getName();
     }
 

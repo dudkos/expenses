@@ -6,5 +6,5 @@ public interface UserContext {
 
     Integer getUserId() throws ServiceException;
 
-    String getUserName();
+    String getUserName() throws ServiceException;
 }
