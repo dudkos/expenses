@@ -1,7 +1,8 @@
 package com.finanse.search.api;
 
+import com.finance.common.context.OAuth2UserContextImpl;
+import com.finance.common.context.UserContext;
 import com.finanse.search.api.service.CustomUserInfoTokenServices;
-import com.finanse.search.api.util.OAuth2Util;
 import feign.RequestInterceptor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.security.oauth2.resource.ResourceServerProperties;
@@ -9,9 +10,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.cloud.netflix.feign.EnableFeignClients;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.method.configuration.EnableGlobalMethodSecurity;
-import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.oauth2.client.DefaultOAuth2ClientContext;
 import org.springframework.security.oauth2.client.OAuth2RestTemplate;
@@ -62,7 +61,7 @@ public class ResourceServerConfiguration extends ResourceServerConfigurerAdapter
     }
 
     @Bean
-    public OAuth2Util oAuth2Util(){
-        return new OAuth2Util();
+    public UserContext userContext(){
+        return new OAuth2UserContextImpl();
     }
 }

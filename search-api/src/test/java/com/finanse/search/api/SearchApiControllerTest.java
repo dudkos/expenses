@@ -1,8 +1,5 @@
 package com.finanse.search.api;
 
-import com.finanse.search.api.model.ExpensesTransaction;
-import com.finanse.search.api.model.SearchTransactions;
-import com.finanse.search.api.util.SearchServiceException;
 import org.junit.Test;
 import org.springframework.http.MediaType;
 
