@@ -1,10 +1,7 @@
 package com.finanse.search.api;
 
-import com.finanse.search.api.model.ExpensesTransaction;
-import com.finanse.search.api.model.SearchTransactions;
 import com.finanse.search.api.service.TransactionsSearchService;
 import com.finanse.search.api.util.SearchApiTestsConstants;
-import com.finanse.search.api.util.SearchServiceException;
 import org.junit.*;
 import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;

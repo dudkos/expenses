@@ -11,6 +11,7 @@
     <modules>
         <module>gateway</module>
         <module>expenses-service</module>
+        <module>search-api</module>
         <module>common</module>
     </modules>
 
