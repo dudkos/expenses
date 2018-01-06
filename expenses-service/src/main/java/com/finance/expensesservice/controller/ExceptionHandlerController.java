@@ -1,8 +1,7 @@
 package com.finance.expensesservice.controller;
 
-import com.finance.expensesservice.dto.ServiceError;
-import com.finance.expensesservice.exception.ExpensesServiceException;
-import com.sun.prism.impl.FactoryResetException;
+import com.finance.common.dto.ServiceError;
+import com.finance.common.exception.ServiceException;
 import feign.FeignException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -16,8 +15,8 @@ public class ExceptionHandlerController {
 
     private static final Logger logger = LoggerFactory.getLogger(ExceptionHandlerController.class);
 
-    @ExceptionHandler(ExpensesServiceException.class)
-    public ResponseEntity<ServiceError> handleExpensesServiceException(ExpensesServiceException e) {
+    @ExceptionHandler(ServiceException.class)
+    public ResponseEntity<ServiceError> handleExpensesServiceException(ServiceException e) {
         logger.error("message {} ", e.getMessage());
         return new ResponseEntity<>(new ServiceError(e.getMessage(), null), HttpStatus.valueOf(e.getStatus()));
     }
@@ -25,7 +24,7 @@ public class ExceptionHandlerController {
     @ExceptionHandler(FeignException.class)
     public ResponseEntity<ServiceError> handleFeignException(FeignException e) {
         logger.error(e.getMessage());
-        return new ResponseEntity<>(new ServiceError(e.status() == 503 ? "Search service unavailable"
-                : e.getMessage(), null), HttpStatus.valueOf(e.status()));
+        return new ResponseEntity<>(new ServiceError(e.status() == 503 ? "Search service unavailable."
+                : e.getMessage(), null), HttpStatus.valueOf(e.status() == 0 ? 500 : e.status()));
     }
 }

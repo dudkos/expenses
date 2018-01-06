@@ -2,7 +2,8 @@ package com.finance.expensesservice;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.finance.expensesservice.util.security.OAuth2Util;
+import com.finance.common.context.OAuth2UserContextImpl;
+import com.finance.common.context.UserContext;
 import oracle.jdbc.pool.OracleDataSource;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
@@ -34,8 +35,8 @@ public class ExpensesServerConfiguration {
     }
 
     @Bean
-    public OAuth2Util oAuth2Util() {
-        return new OAuth2Util();
+    public UserContext userContext() {
+        return new OAuth2UserContextImpl();
     }
 
     @Bean

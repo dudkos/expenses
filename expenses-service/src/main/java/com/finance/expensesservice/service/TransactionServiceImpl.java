@@ -1,14 +1,15 @@
 package com.finance.expensesservice.service;
 
+import com.finance.common.context.UserContext;
+import com.finance.common.dto.Transaction;
+import com.finance.common.exception.ServiceException;
 import com.finance.expensesservice.client.SearchAPIClient;
 import com.finance.expensesservice.dao.TransactionDAO;
 import com.finance.expensesservice.dao.util.TransactionSpecifications;
 import com.finance.expensesservice.domain.Category;
-import com.finance.expensesservice.domain.SearchTransactions;
-import com.finance.expensesservice.domain.Transaction;
-import com.finance.expensesservice.exception.ExpensesServiceException;
+import com.finance.common.dto.SearchTransactions;
+import com.finance.expensesservice.domain.ExpensesTransaction;
 import com.finance.expensesservice.exception.ObjectNotFoundException;
-import com.finance.expensesservice.util.security.OAuth2Util;
 import com.finance.expensesservice.util.reader.ReaderContext;
 import com.finance.expensesservice.util.reader.StatementReaderFactory;
 import org.slf4j.Logger;
@@ -34,6 +35,8 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import static com.finance.expensesservice.util.Util.cast;
+
 /**
  * Created by siarh on 07/05/2017.
  */
@@ -46,7 +49,7 @@ public class TransactionServiceImpl implements TransactionService, ApplicationCo
 
     private final CategoryService categoryService;
 
-    private final OAuth2Util oAuth2Util;
+    private final UserContext userContext;
 
     private final SearchAPIClient searchAPIClient;
 
@@ -58,77 +61,77 @@ public class TransactionServiceImpl implements TransactionService, ApplicationCo
     @Autowired
     public TransactionServiceImpl(TransactionDAO transactionDAO,
                                   CategoryService categoryService,
-                                  OAuth2Util oAuth2Util,
+                                  UserContext userContext,
                                   SearchAPIClient searchAPIClient,
                                   ApplicationContext context) {
 
         this.transactionDAO = transactionDAO;
         this.categoryService = categoryService;
-        this.oAuth2Util = oAuth2Util;
+        this.userContext = userContext;
         this.searchAPIClient = searchAPIClient;
         this.context = context;
     }
 
     @Override
     @Transactional
-    public void uploadData(MultipartFile file) throws ExpensesServiceException {
+    public void uploadData(MultipartFile file) throws ServiceException {
         if(file != null && !file.isEmpty()) {
-            List<Transaction> transactions;
+            List<ExpensesTransaction> expensesTransactions;
             try {
-                transactions =  new ReaderContext(StatementReaderFactory.readerStrategy(file.getOriginalFilename()))
+                expensesTransactions =  new ReaderContext(StatementReaderFactory.readerStrategy(file.getOriginalFilename()))
                         .readTransactionsFromFile(file.getInputStream());
             } catch (Exception e) {
                 logger.error(e.getMessage());
-                throw new ExpensesServiceException(HttpStatus.BAD_REQUEST.value(), "Can't read transactions from file "
+                throw new ServiceException(HttpStatus.BAD_REQUEST.value(), "Can't read expensesTransactions from file "
                         + file.getOriginalFilename());
             }
 
             Category defaultCategory = categoryService.findDefaultCategory(true);
-            List<Transaction> oldLastDateTransactions = transactionDAO.findLastDateTransactions(oAuth2Util.getUserIdFromAuth());
+            List<ExpensesTransaction> oldLastDateExpensesTransactions = transactionDAO.findLastDateTransactions(userContext.getUserId());
 
-            saveTransactions(oldLastDateTransactions, transactions, defaultCategory);
+            saveTransactions(oldLastDateExpensesTransactions, expensesTransactions, defaultCategory);
         }
     }
 
     @Override
     @Transactional
     public void deleteAllTransactions() {
-        transactionDAO.deleteAllTransactions(oAuth2Util.getUserIdFromAuth());
+        transactionDAO.deleteAllTransactions(userContext.getUserId());
         searchAPIClient.deleteAllUserTransactionsFromIndex();
     }
 
     @Override
-    public List<Transaction> findTransactions(Integer categoryId, String order) {
-        return transactionDAO.findAll(TransactionSpecifications.getTransactions(oAuth2Util.getUserIdFromAuth(), categoryId, order));
+    public List<ExpensesTransaction> findTransactions(Integer categoryId, String order) {
+        return transactionDAO.findAll(TransactionSpecifications.getTransactions(userContext.getUserId(), categoryId, order));
     }
 
     @Override
     @Transactional
-    public void addTransactionsToCategory(Integer categoryId, List<Integer> transactionsIds) throws ExpensesServiceException {
+    public void addTransactionsToCategory(Integer categoryId, List<Integer> transactionsIds) throws ServiceException {
         Category category = categoryService.findCategoryById(categoryId, true);
         if(category == null) {
-            throw new ObjectNotFoundException("Category with id " + categoryId + " doesn't exist for user " + oAuth2Util.getUserIdFromAuth());
+            throw new ObjectNotFoundException("Category with id " + categoryId + " doesn't exist for user " + userContext.getUserId());
         }
 
         if(CollectionUtils.isEmpty(transactionsIds)) {
-            throw new ExpensesServiceException(HttpStatus.BAD_REQUEST.value(), "Transaction ids is " + transactionsIds);
+            throw new ServiceException(HttpStatus.BAD_REQUEST.value(), "ExpensesTransaction ids is " + transactionsIds);
         }
 
-        List<Transaction> transactions = transactionDAO.findTransactionsByIds(oAuth2Util.getUserIdFromAuth(), transactionsIds);
+        List<ExpensesTransaction> expensesTransactions = transactionDAO.findTransactionsByIds(userContext.getUserId(), transactionsIds);
 
-        if(saveTransactionsToCategory(category, transactions))
-            searchAPIClient.updateTransactionsIndex(new SearchTransactions(category.getId(), transactions));
+        if(saveTransactionsToCategory(category, expensesTransactions))
+            searchAPIClient.updateTransactionsIndex(new SearchTransactions(category.getId(), cast(expensesTransactions)));
     }
 
     @Override
     public void searchAndAddToCategory(String desc, Integer categoryId, Integer categoryToAddId) {
         if(StringUtils.isEmpty(desc)) {
-            throw new ExpensesServiceException(HttpStatus.BAD_REQUEST.value(), "Description can't be empty.");
+            throw new ServiceException(HttpStatus.BAD_REQUEST.value(), "Description can't be empty.");
         }
 
         Category category = categoryService.findCategoryById(categoryId, false);
         if(category == null) {
-            throw new ObjectNotFoundException("Category with id " + categoryId + " doesn't exist for user " + oAuth2Util.getUserIdFromAuth());
+            throw new ObjectNotFoundException("Category with id " + categoryId + " doesn't exist for user " + userContext.getUserId());
         }
 
         int i = 0;
@@ -141,99 +144,99 @@ public class TransactionServiceImpl implements TransactionService, ApplicationCo
     }
 
     private List<Integer> findTransactionsIdsFromIndex(String desc, Integer categoryId) {
-        List<Transaction> result = searchAPIClient.searchTransactions(categoryId, desc, 100);
+        List<ExpensesTransaction> result = searchAPIClient.searchTransactions(categoryId, desc, 100);
         return CollectionUtils.isEmpty(result) ? Collections.emptyList() :
                 result.stream()
                         .map(Transaction :: getId)
                         .collect(Collectors.toList());
     }
 
-    private boolean saveTransactionsToCategory(Category category, List<Transaction> transactions) throws ExpensesServiceException {
-        if(!CollectionUtils.isEmpty(transactions) && category != null) {
-            category.addAll(transactions);
+    private boolean saveTransactionsToCategory(Category category, List<ExpensesTransaction> expensesTransactions) throws ServiceException {
+        if(!CollectionUtils.isEmpty(expensesTransactions) && category != null) {
+            category.addAll(expensesTransactions);
             categoryService.update(category);
-            logger.info("{} transactions for user with id {} have been added to category {}",
-                    transactions.size(), oAuth2Util.getUserIdFromAuth(), category.getId());
+            logger.info("{} expensesTransactions for user with id {} have been added to category {}",
+                    expensesTransactions.size(), userContext.getUserId(), category.getId());
             return true;
         }
 
         return false;
     }
 
-    private void saveTransactions(List<Transaction> oldTransactions, List<Transaction> newTransactions, Category category) {
-        List<Transaction> transactionsToAdd = prepareTransactionsToAdd(oldTransactions, newTransactions);
-        logger.info("Going to add {} transactions of {} to db", transactionsToAdd.size(), newTransactions.size());
+    private void saveTransactions(List<ExpensesTransaction> oldExpensesTransactions, List<ExpensesTransaction> newExpensesTransactions, Category category) {
+        List<ExpensesTransaction> transactionsToAdd = prepareTransactionsToAdd(oldExpensesTransactions, newExpensesTransactions);
+        logger.info("Going to add {} transactions of {} to db", transactionsToAdd.size(), newExpensesTransactions.size());
         if(!CollectionUtils.isEmpty(transactionsToAdd) && saveTransactionsToCategory(category, transactionsToAdd)) {
-            searchAPIClient.indexTransactions(new SearchTransactions(category.getId(), findTransactions(category.getId(), null)));
+            searchAPIClient.indexTransactions(new SearchTransactions(category.getId(), cast(findTransactions(category.getId(), null))));
         }
     }
 
-    private List<Transaction> prepareTransactionsToAdd(List<Transaction> oldTransactions, List<Transaction> newTransactions) {
-        if (CollectionUtils.isEmpty(oldTransactions)){
-            return CollectionUtils.isEmpty(newTransactions) ? Collections.emptyList() : newTransactions;
+    private List<ExpensesTransaction> prepareTransactionsToAdd(List<ExpensesTransaction> oldExpensesTransactions, List<ExpensesTransaction> newExpensesTransactions) {
+        if (CollectionUtils.isEmpty(oldExpensesTransactions)){
+            return CollectionUtils.isEmpty(newExpensesTransactions) ? Collections.emptyList() : newExpensesTransactions;
         }
 
-        newTransactions.sort(Comparator.comparing(Transaction::getTransactionDate));
+        newExpensesTransactions.sort(Comparator.comparing(ExpensesTransaction::getTransactionDate));
 
-        Transaction lastOldTransaction = getFirstTransaction(oldTransactions);
-        Transaction firstNewTransaction = getFirstTransaction(newTransactions);
+        ExpensesTransaction lastOldExpensesTransaction = getFirstTransaction(oldExpensesTransactions);
+        ExpensesTransaction firstNewExpensesTransaction = getFirstTransaction(newExpensesTransactions);
 
-        if(lastOldTransaction == null || firstNewTransaction == null) {
-            throw new ExpensesServiceException(HttpStatus.INTERNAL_SERVER_ERROR.value(), "Error merging of transactions");
+        if(lastOldExpensesTransaction == null || firstNewExpensesTransaction == null) {
+            throw new ServiceException(HttpStatus.INTERNAL_SERVER_ERROR.value(), "Error merging of transactions");
         }
 
-        return lastOldTransaction.getTransactionDate().before(firstNewTransaction.getTransactionDate()) ? newTransactions :
-                mergeTransactionsToAdd(newTransactions, oldTransactions, lastOldTransaction.getTransactionDate(),
-                        lastOldTransaction.getTransactionDate().equals(firstNewTransaction.getTransactionDate()) ?
-                                firstNewTransaction.getTransactionDate() : lastOldTransaction.getTransactionDate());
+        return lastOldExpensesTransaction.getTransactionDate().before(firstNewExpensesTransaction.getTransactionDate()) ? newExpensesTransactions :
+                mergeTransactionsToAdd(newExpensesTransactions, oldExpensesTransactions, lastOldExpensesTransaction.getTransactionDate(),
+                        lastOldExpensesTransaction.getTransactionDate().equals(firstNewExpensesTransaction.getTransactionDate()) ?
+                                firstNewExpensesTransaction.getTransactionDate() : lastOldExpensesTransaction.getTransactionDate());
     }
 
-    private List<Transaction> mergeTransactionsToAdd(List<Transaction> newTransactions,
-                                                     List<Transaction> oldTransactions,
-                                                     Timestamp oldTransactionEndDate,
-                                                     Timestamp newTransactionsStartDate) {
+    private List<ExpensesTransaction> mergeTransactionsToAdd(List<ExpensesTransaction> newExpensesTransactions,
+                                                             List<ExpensesTransaction> oldExpensesTransactions,
+                                                             Timestamp oldTransactionEndDate,
+                                                             Timestamp newTransactionsStartDate) {
 
-        List<Transaction> transactionsToAdd = merge(filterTransactionsByDate(oldTransactions, oldTransactionEndDate),
-                filterTransactionsByDate(newTransactions, newTransactionsStartDate));
+        List<ExpensesTransaction> transactionsToAdd = merge(filterTransactionsByDate(oldExpensesTransactions, oldTransactionEndDate),
+                filterTransactionsByDate(newExpensesTransactions, newTransactionsStartDate));
 
-        transactionsToAdd.addAll(excludeTransactionsByDate(newTransactions, newTransactionsStartDate));
+        transactionsToAdd.addAll(excludeTransactionsByDate(newExpensesTransactions, newTransactionsStartDate));
 
         return transactionsToAdd;
     }
 
-    private List<Transaction> merge(List<Transaction> oldLastDayTransactions, List<Transaction> newFirstDayTransactions) {
-        List<Transaction> resultTransactions = new ArrayList<>();
-        if(newFirstDayTransactions.size() > oldLastDayTransactions.size()) {
-            resultTransactions.addAll(newFirstDayTransactions.stream()
-                    .filter(v -> !isTransactionInTransactionList(oldLastDayTransactions, v))
+    private List<ExpensesTransaction> merge(List<ExpensesTransaction> oldLastDayExpensesTransactions, List<ExpensesTransaction> newFirstDayExpensesTransactions) {
+        List<ExpensesTransaction> resultExpensesTransactions = new ArrayList<>();
+        if(newFirstDayExpensesTransactions.size() > oldLastDayExpensesTransactions.size()) {
+            resultExpensesTransactions.addAll(newFirstDayExpensesTransactions.stream()
+                    .filter(v -> !isTransactionInTransactionList(oldLastDayExpensesTransactions, v))
                     .collect(Collectors.toList()));
         }
 
-        return resultTransactions;
+        return resultExpensesTransactions;
     }
 
-    private List<Transaction> excludeTransactionsByDate(List<Transaction> transactions, Timestamp date) {
-        return CollectionUtils.isEmpty(transactions) || date == null ? transactions :
-                transactions.stream()
+    private List<ExpensesTransaction> excludeTransactionsByDate(List<ExpensesTransaction> expensesTransactions, Timestamp date) {
+        return CollectionUtils.isEmpty(expensesTransactions) || date == null ? expensesTransactions :
+                expensesTransactions.stream()
                         .filter(v -> !v.getTransactionDate().equals(date) && v.getTransactionDate().after(date))
                         .collect(Collectors.toList());
     }
 
-    private Transaction getFirstTransaction(List<Transaction> transactions) {
-        return CollectionUtils.isEmpty(transactions) ? null : transactions.get(0);
+    private ExpensesTransaction getFirstTransaction(List<ExpensesTransaction> expensesTransactions) {
+        return CollectionUtils.isEmpty(expensesTransactions) ? null : expensesTransactions.get(0);
     }
 
-    private List<Transaction> filterTransactionsByDate(List<Transaction> transactions, Timestamp date) {
-        return CollectionUtils.isEmpty(transactions) ||  date == null ? Collections.emptyList() :
-                transactions.stream()
+    private List<ExpensesTransaction> filterTransactionsByDate(List<ExpensesTransaction> expensesTransactions, Timestamp date) {
+        return CollectionUtils.isEmpty(expensesTransactions) ||  date == null ? Collections.emptyList() :
+                expensesTransactions.stream()
                         .filter(v -> v.getTransactionDate().equals(date))
                         .collect(Collectors.toList());
     }
 
-    private boolean isTransactionInTransactionList(List<Transaction> list, Transaction transaction) {
-        return !CollectionUtils.isEmpty(list) && transaction.getTransactionDate() != null
-                && list.stream().anyMatch(tr -> transaction.getTransactionDate().equals(tr.getTransactionDate())
-                && transaction.getDescription().equals(tr.getDescription()) && compareAmounts(transaction.getAmount(), tr.getAmount()));
+    private boolean isTransactionInTransactionList(List<ExpensesTransaction> list, ExpensesTransaction expensesTransaction) {
+        return !CollectionUtils.isEmpty(list) && expensesTransaction.getTransactionDate() != null
+                && list.stream().anyMatch(tr -> expensesTransaction.getTransactionDate().equals(tr.getTransactionDate())
+                && expensesTransaction.getDescription().equals(tr.getDescription()) && compareAmounts(expensesTransaction.getAmount(), tr.getAmount()));
     }
 
     private boolean compareAmounts(BigDecimal a1, BigDecimal a2) {
@@ -248,6 +251,12 @@ public class TransactionServiceImpl implements TransactionService, ApplicationCo
         this.context = context;
     }
 
+    /**
+     * Transaction annotation(aspect) only works on proxy objects.
+     * If try to execute @Transactional method from
+     * another method spring calls this.method instate of proxy.method
+     * @return Spring proxy object of TransactionServiceImpl
+     */
     private TransactionServiceImpl getProxy() {
         return context.getBean(this.getClass());
     }

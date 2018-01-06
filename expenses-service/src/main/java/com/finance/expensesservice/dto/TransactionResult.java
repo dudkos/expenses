@@ -1,6 +1,6 @@
 package com.finance.expensesservice.dto;
 
-import com.finance.expensesservice.domain.Transaction;
+import com.finance.expensesservice.domain.ExpensesTransaction;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
@@ -19,7 +19,7 @@ public class TransactionResult {
 
     private BigDecimal result;
 
-    private List<Transaction> transactions = new ArrayList<>();
+    private List<ExpensesTransaction> expensesTransactions = new ArrayList<>();
 
     public String getPeriod() {
         return period;
@@ -53,11 +53,11 @@ public class TransactionResult {
         this.result = result;
     }
 
-    public List<Transaction> getTransactions() {
-        return transactions;
+    public List<ExpensesTransaction> getExpensesTransactions() {
+        return expensesTransactions;
     }
 
-    public void setTransactions(List<Transaction> transactions) {
-        this.transactions = transactions;
+    public void setExpensesTransactions(List<ExpensesTransaction> expensesTransactions) {
+        this.expensesTransactions = expensesTransactions;
     }
 }

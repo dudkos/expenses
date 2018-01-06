@@ -1,6 +1,7 @@
 package com.finance.expensesservice.domain;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.finance.common.dto.Transaction;
 
 import javax.persistence.*;
 import java.io.Serializable;
@@ -12,7 +13,7 @@ import java.sql.Timestamp;
  */
 @Entity
 @Table(name = "EXPENSES_TRANSACTION")
-public class Transaction extends Base implements Serializable {
+public class ExpensesTransaction extends Base implements Transaction, Serializable {
 
     @Column(name = "ACCOUNT_NUMBER")
     private String accountNumber;
@@ -38,6 +39,7 @@ public class Transaction extends Base implements Serializable {
         this.accountNumber = accountNumber;
     }
 
+    @Override
     public String getCurrencyCode() {
         return currencyCode;
     }
@@ -46,6 +48,7 @@ public class Transaction extends Base implements Serializable {
         this.currencyCode = currencyCode;
     }
 
+    @Override
     public Timestamp getTransactionDate() {
         return transactionDate;
     }
@@ -54,6 +57,7 @@ public class Transaction extends Base implements Serializable {
         this.transactionDate = transactionDate;
     }
 
+    @Override
     public BigDecimal getAmount() {
         return amount;
     }
@@ -62,6 +66,7 @@ public class Transaction extends Base implements Serializable {
         this.amount = amount;
     }
 
+    @Override
     public String getDescription() {
         return description;
     }
