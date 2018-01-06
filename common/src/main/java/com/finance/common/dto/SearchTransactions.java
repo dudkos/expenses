@@ -1,13 +1,11 @@
-package com.finance.expensesservice.domain;
-
-import java.util.ArrayList;
+package com.finance.common.dto;
 import java.util.List;
 
 public class SearchTransactions {
 
     private Integer categoryId;
 
-    private List<Transaction> expensesTransactions = new ArrayList<>();
+    private List<Transaction> expensesTransactions;
 
     public SearchTransactions(Integer categoryId, List<Transaction> expensesTransactions) {
         this.categoryId = categoryId;

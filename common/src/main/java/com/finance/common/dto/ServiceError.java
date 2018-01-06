@@ -1,4 +1,4 @@
-package com.finance.expensesservice.dto;
+package com.finance.common.dto;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 

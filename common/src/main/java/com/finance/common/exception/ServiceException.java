@@ -1,12 +1,12 @@
-package com.finance.expensesservice.exception;
+package com.finance.common.exception;
 
-public class ExpensesServiceException extends RuntimeException {
+public class ServiceException extends RuntimeException {
 
     private Integer status;
 
     private String message;
 
-    public ExpensesServiceException(Integer status, String message) {
+    public ServiceException(Integer status, String message) {
         this.status = status;
         this.message = message;
     }
