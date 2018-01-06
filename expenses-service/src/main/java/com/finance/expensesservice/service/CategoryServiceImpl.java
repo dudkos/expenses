@@ -1,13 +1,13 @@
 package com.finance.expensesservice.service;
 
+import com.finance.common.context.UserContext;
+import com.finance.common.exception.ServiceException;
 import com.finance.expensesservice.client.SearchAPIClient;
 import com.finance.expensesservice.dao.CategoryDAO;
 import com.finance.expensesservice.domain.Category;
-import com.finance.expensesservice.domain.SearchTransactions;
-import com.finance.expensesservice.domain.Transaction;
-import com.finance.expensesservice.exception.ExpensesServiceException;
+import com.finance.common.dto.SearchTransactions;
+import com.finance.expensesservice.domain.ExpensesTransaction;
 import com.finance.expensesservice.exception.ObjectNotFoundException;
-import com.finance.expensesservice.util.security.OAuth2Util;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -20,6 +20,7 @@ import java.util.List;
 import java.util.Set;
 
 import static com.finance.expensesservice.util.ExpensesServiceConstants.DEFAULT_CATEGORY_NAME;
+import static com.finance.expensesservice.util.Util.cast;
 
 /**
  * Created by siarh on 06/05/2017.
@@ -29,26 +30,26 @@ public class CategoryServiceImpl implements CategoryService {
 
     private final CategoryDAO categoryDAO;
 
-    private final OAuth2Util oAuth2Util;
+    private final UserContext userContext;
 
     private final SearchAPIClient searchAPIClient;
 
     @Autowired
     public CategoryServiceImpl(CategoryDAO categoryDAO,
-                               OAuth2Util oAuth2Util,
+                               UserContext userContext,
                                SearchAPIClient searchAPIClient) {
         this.categoryDAO = categoryDAO;
-        this.oAuth2Util = oAuth2Util;
+        this.userContext = userContext;
         this.searchAPIClient = searchAPIClient;
     }
 
     @Override
     public Category findCategoryById(Integer id, boolean withTransactions) {
-        Category result =  withTransactions ? categoryDAO.findCategoryByIdWithTr(oAuth2Util.getUserIdFromAuth(), id) :
-                categoryDAO.findCategoryById(oAuth2Util.getUserIdFromAuth(), id);
+        Category result =  withTransactions ? categoryDAO.findCategoryByIdWithTr(userContext.getUserId(), id) :
+                categoryDAO.findCategoryById(userContext.getUserId(), id);
 
         if(result == null) {
-            throw new ObjectNotFoundException("Can't find category with id " + id + " for user " + oAuth2Util.getUserNameFromAuth());
+            throw new ObjectNotFoundException("Can't find category with id " + id + " for user " + userContext.getUserName());
         }
 
         return result;
@@ -56,12 +57,12 @@ public class CategoryServiceImpl implements CategoryService {
 
     @Override
     public Category findCategoryByName(String name, boolean withTransactions){
-        return withTransactions ? categoryDAO.findCategoryByNameWithTr(oAuth2Util.getUserIdFromAuth(), name) :
-                 categoryDAO.findCategoryByName(oAuth2Util.getUserIdFromAuth(), name);
+        return withTransactions ? categoryDAO.findCategoryByNameWithTr(userContext.getUserId(), name) :
+                 categoryDAO.findCategoryByName(userContext.getUserId(), name);
     }
 
     @Override
-    public Category findDefaultCategory(boolean withTransactions) throws ExpensesServiceException {
+    public Category findDefaultCategory(boolean withTransactions) throws ServiceException {
         Category defaultCategory = findCategoryByName(DEFAULT_CATEGORY_NAME, withTransactions);
         if(defaultCategory == null) {
             defaultCategory = createCategory(new Category(DEFAULT_CATEGORY_NAME));
@@ -71,8 +72,8 @@ public class CategoryServiceImpl implements CategoryService {
     }
 
     @Override
-    public List<Category> findCategories() throws ExpensesServiceException {
-        List<Category> categories = categoryDAO.findCategories(oAuth2Util.getUserIdFromAuth());
+    public List<Category> findCategories() throws ServiceException {
+        List<Category> categories = categoryDAO.findCategories(userContext.getUserId());
         if(CollectionUtils.isEmpty(categories) || !categories.contains(new Category(DEFAULT_CATEGORY_NAME))) {
             Category defaultCategory = new Category(DEFAULT_CATEGORY_NAME);
             createCategory(new Category(DEFAULT_CATEGORY_NAME));
@@ -87,12 +88,12 @@ public class CategoryServiceImpl implements CategoryService {
     @Override
     @Transactional
     public Category updateCategory(Integer categoryId, Category category){
-        Category fromDb = categoryDAO.findCategoryByIdWithTr(oAuth2Util.getUserIdFromAuth(), categoryId);
+        Category fromDb = categoryDAO.findCategoryByIdWithTr(userContext.getUserId(), categoryId);
         if(fromDb == null) {
-            throw new ObjectNotFoundException("can't find category with id " + categoryId + " for user " + oAuth2Util.getUserIdFromAuth());
+            throw new ObjectNotFoundException("can't find category with id " + categoryId + " for user " + userContext.getUserId());
         }
         if(DEFAULT_CATEGORY_NAME.equals(fromDb.getName())) {
-            throw new ExpensesServiceException(HttpStatus.BAD_REQUEST.value(), "Can't update default category");
+            throw new ServiceException(HttpStatus.BAD_REQUEST.value(), "Can't update default category");
         }
         if(!StringUtils.isEmpty(category.getName())) {
             fromDb.setName(category.getName());
@@ -110,10 +111,10 @@ public class CategoryServiceImpl implements CategoryService {
     @Transactional
     public Category createCategory(Category category){
         if(DEFAULT_CATEGORY_NAME.equals(category.getName()) && findCategoryByName(DEFAULT_CATEGORY_NAME, false) != null) {
-            throw new ExpensesServiceException(HttpStatus.BAD_REQUEST.value(), "Default category already exists");
+            throw new ServiceException(HttpStatus.BAD_REQUEST.value(), "Default category already exists");
         }
         Category newCategory = new Category(category);
-        newCategory.setUserId(oAuth2Util.getUserIdFromAuth());
+        newCategory.setUserId(userContext.getUserId());
         categoryDAO.save(newCategory);
 
         return newCategory;
@@ -121,25 +122,24 @@ public class CategoryServiceImpl implements CategoryService {
 
     @Override
     public void deleteCategory(Integer categoryId) {
-        Category category = categoryDAO.findCategoryByIdWithTr(oAuth2Util.getUserIdFromAuth(), categoryId);
+        Category category = categoryDAO.findCategoryByIdWithTr(userContext.getUserId(), categoryId);
 
         if(category == null) {
             throw new ObjectNotFoundException("Can't find category with id " + categoryId);
         }
 
         if(DEFAULT_CATEGORY_NAME.equals(category.getName())) {
-            throw new ExpensesServiceException(HttpStatus.BAD_REQUEST.value(), "Can't delete default category");
+            throw new ServiceException(HttpStatus.BAD_REQUEST.value(), "Can't delete default category");
         }
 
-        Set<Transaction> transactionsToMove = category.getTransactions();
+        Set<ExpensesTransaction> transactionsToMove = category.getExpensesTransactions();
 
         if(!CollectionUtils.isEmpty(transactionsToMove)) {
-            List<Transaction> transactions = new ArrayList<>();
-            transactions.addAll(transactionsToMove);
+            List<ExpensesTransaction> expensesTransactions = new ArrayList<>(transactionsToMove);
             Category defaultCategory = findDefaultCategory(true);
-            defaultCategory.addAll(transactions);
+            defaultCategory.addAll(expensesTransactions);
             categoryDAO.save(defaultCategory);
-            searchAPIClient.updateTransactionsIndex(new SearchTransactions(defaultCategory.getId(), transactions));
+            searchAPIClient.updateTransactionsIndex(new SearchTransactions(defaultCategory.getId(), cast(expensesTransactions)));
         }
 
         categoryDAO.delete(category);

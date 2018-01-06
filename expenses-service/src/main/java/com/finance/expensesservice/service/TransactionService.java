@@ -1,6 +1,6 @@
 package com.finance.expensesservice.service;
 
-import com.finance.expensesservice.domain.Transaction;
+import com.finance.expensesservice.domain.ExpensesTransaction;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
@@ -14,7 +14,7 @@ public interface TransactionService {
 
     void deleteAllTransactions();
 
-    List<Transaction> findTransactions(Integer categoryId, String order);
+    List<ExpensesTransaction> findTransactions(Integer categoryId, String order);
 
     void addTransactionsToCategory(Integer categoryId, List<Integer> transactionsIds);
 

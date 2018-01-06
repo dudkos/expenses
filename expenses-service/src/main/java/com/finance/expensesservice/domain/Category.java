@@ -20,7 +20,7 @@ public class Category extends Base implements Serializable {
 
     @JsonIgnore
     @OneToMany(fetch = FetchType.LAZY, mappedBy = "category", cascade = CascadeType.ALL)
-    private Set<Transaction> transactions = new HashSet<>();
+    private Set<ExpensesTransaction> expensesTransactions = new HashSet<>();
 
     @Column(name = "USER_ID")
     private Integer userId;
@@ -44,12 +44,12 @@ public class Category extends Base implements Serializable {
         this.name = name;
     }
 
-    public Set<Transaction> getTransactions() {
-        return transactions;
+    public Set<ExpensesTransaction> getExpensesTransactions() {
+        return expensesTransactions;
     }
 
-    public void setTransactions(Set<Transaction> transactions) {
-        this.transactions = transactions;
+    public void setExpensesTransactions(Set<ExpensesTransaction> expensesTransactions) {
+        this.expensesTransactions = expensesTransactions;
     }
 
     @JsonIgnore
@@ -61,13 +61,13 @@ public class Category extends Base implements Serializable {
         this.userId = userId;
     }
 
-    public void add(Transaction transaction){
-        transaction.setCategory(this);
-        this.transactions.add(transaction);
+    private void add(ExpensesTransaction expensesTransaction){
+        expensesTransaction.setCategory(this);
+        this.expensesTransactions.add(expensesTransaction);
     }
 
-    public void addAll(List<Transaction> transactions) {
-        transactions.forEach(this::add);
+    public void addAll(List<ExpensesTransaction> expensesTransactions) {
+        expensesTransactions.forEach(this::add);
     }
 
     @Override

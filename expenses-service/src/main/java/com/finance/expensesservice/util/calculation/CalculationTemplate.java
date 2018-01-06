@@ -1,8 +1,8 @@
 package com.finance.expensesservice.util.calculation;
 
-import com.finance.expensesservice.domain.Transaction;
+import com.finance.common.exception.ServiceException;
+import com.finance.expensesservice.domain.ExpensesTransaction;
 import com.finance.expensesservice.dto.TransactionResult;
-import com.finance.expensesservice.exception.ExpensesServiceException;
 import org.springframework.http.HttpStatus;
 import org.springframework.util.CollectionUtils;
 
@@ -10,22 +10,21 @@ import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.List;
-import java.util.Optional;
 
 public abstract class CalculationTemplate {
 
     abstract String getPeriodValue(Calendar calendar);
 
-    public final List<TransactionResult> transactionResult(List<Transaction> transactions) {
+    public final List<TransactionResult> transactionResult(List<ExpensesTransaction> expensesTransactions) {
         List<TransactionResult> transactionResults = new ArrayList<>();
-        transactions.forEach(v -> updateTransactionResult(transactionResults, v));
+        expensesTransactions.forEach(v -> updateTransactionResult(transactionResults, v));
         calculateTotal(transactionResults);
 
         return transactionResults;
     }
 
-    private void updateTransactionResult(List<TransactionResult> results, Transaction transaction) {
-        addToTransactionResult(getTransactionResultByPeriod(results, getPeriodPointFromTransaction(transaction)), transaction);
+    private void updateTransactionResult(List<TransactionResult> results, ExpensesTransaction expensesTransaction) {
+        addToTransactionResult(getTransactionResultByPeriod(results, getPeriodPointFromTransaction(expensesTransaction)), expensesTransaction);
     }
 
     private TransactionResult getTransactionResultByPeriod(List<TransactionResult> results, String period) {
@@ -41,22 +40,22 @@ public abstract class CalculationTemplate {
         return transactionResult;
     }
 
-    private String getPeriodPointFromTransaction(Transaction transaction) {
+    private String getPeriodPointFromTransaction(ExpensesTransaction expensesTransaction) {
         Calendar calendar = Calendar.getInstance();
-        calendar.setTime(transaction.getTransactionDate());
+        calendar.setTime(expensesTransaction.getTransactionDate());
         return getPeriodValue(calendar);
     }
 
-    private static void  addToTransactionResult(TransactionResult result, Transaction transaction) throws ExpensesServiceException {
-        if(result == null && transaction == null) {
-            throw new ExpensesServiceException(HttpStatus.BAD_REQUEST.value(), "transaction result or transaction is null");
+    private static void  addToTransactionResult(TransactionResult result, ExpensesTransaction expensesTransaction) throws ServiceException {
+        if(result == null && expensesTransaction == null) {
+            throw new ServiceException(HttpStatus.BAD_REQUEST.value(), "expensesTransaction result or expensesTransaction is null");
         }
-        if(transaction.getAmount().compareTo(BigDecimal.ZERO) < 0) {
+        if(expensesTransaction.getAmount().compareTo(BigDecimal.ZERO) < 0) {
             assert result != null;
-            result.setTotalCreditAmount(result.getTotalCreditAmount().add(transaction.getAmount().abs()));
+            result.setTotalCreditAmount(result.getTotalCreditAmount().add(expensesTransaction.getAmount().abs()));
         } else {
             assert result != null;
-            result.setTotalDebitAmount(result.getTotalDebitAmount().add(transaction.getAmount()));
+            result.setTotalDebitAmount(result.getTotalDebitAmount().add(expensesTransaction.getAmount()));
         }
     }
 

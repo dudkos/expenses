@@ -1,6 +1,6 @@
 package com.finance.expensesservice.util.reader;
 
-import com.finance.expensesservice.domain.Transaction;
+import com.finance.expensesservice.domain.ExpensesTransaction;
 import com.finance.expensesservice.util.reader.formatter.Formatter;
 
 import java.io.InputStream;
@@ -15,7 +15,7 @@ public class PDFStatementReaderStrategy implements StatementReaderStrategy {
     }
 
     @Override
-    public List<Transaction> read(InputStream input) {
+    public List<ExpensesTransaction> read(InputStream input) {
         throw  new UnsupportedOperationException();
     }
 }

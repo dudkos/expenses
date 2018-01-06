@@ -1,6 +1,6 @@
 package com.finance.expensesservice.util.reader;
 
-import com.finance.expensesservice.domain.Transaction;
+import com.finance.expensesservice.domain.ExpensesTransaction;
 import com.finance.expensesservice.util.reader.formatter.Formatter;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
@@ -20,25 +20,25 @@ public class XLSStatementReaderStrategy implements StatementReaderStrategy {
     }
 
     @Override
-    public List<Transaction> read(InputStream input) throws Exception {
+    public List<ExpensesTransaction> read(InputStream input) throws Exception {
         Workbook workbook = WorkbookFactory.create(input);
         Sheet sheet = workbook.getSheetAt(0);
-        List<Transaction> transactions = new ArrayList<>();
+        List<ExpensesTransaction> expensesTransactions = new ArrayList<>();
         sheet.forEach(row -> {
-            if(!sheet.getRow(0).equals(row) && isRowValid(row)) transactions.add(convertToTransaction(row));
+            if(!sheet.getRow(0).equals(row) && isRowValid(row)) expensesTransactions.add(convertToTransaction(row));
         });
 
-        return transactions;
+        return expensesTransactions;
     }
 
-    private Transaction convertToTransaction(Row row) {
-        Transaction transaction = new Transaction();
-        transaction.setAccountNumber(formatter.account(row.getCell(0).getNumericCellValue()));
-        transaction.setAmount(formatter.amount(row.getCell(6).getNumericCellValue()));
-        transaction.setCurrencyCode(row.getCell(1).getStringCellValue());
-        transaction.setTransactionDate(formatter.date(row.getCell(3).getNumericCellValue()));
-        transaction.setDescription(row.getCell(7).getStringCellValue());
-        return transaction;
+    private ExpensesTransaction convertToTransaction(Row row) {
+        ExpensesTransaction expensesTransaction = new ExpensesTransaction();
+        expensesTransaction.setAccountNumber(formatter.account(row.getCell(0).getNumericCellValue()));
+        expensesTransaction.setAmount(formatter.amount(row.getCell(6).getNumericCellValue()));
+        expensesTransaction.setCurrencyCode(row.getCell(1).getStringCellValue());
+        expensesTransaction.setTransactionDate(formatter.date(row.getCell(3).getNumericCellValue()));
+        expensesTransaction.setDescription(row.getCell(7).getStringCellValue());
+        return expensesTransaction;
     }
 
     private boolean isRowValid(Row row) {

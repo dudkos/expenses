@@ -1,9 +1,9 @@
 package com.finance.expensesservice.service;
 
+import com.finance.common.exception.ServiceException;
 import com.finance.expensesservice.dto.Chart;
 import com.finance.expensesservice.dto.ChartData;
 import com.finance.expensesservice.dto.TransactionResult;
-import com.finance.expensesservice.exception.ExpensesServiceException;
 import com.finance.expensesservice.util.calculation.CalculationFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -31,7 +31,7 @@ public class ExpensesServiceImpl implements ExpensesService {
             return CalculationFactory.calculationTemplate(period)
                     .transactionResult(expensesTransactionService.findTransactions(categoryId, order));
         } catch (Exception e) {
-            throw new ExpensesServiceException(HttpStatus.BAD_REQUEST.value(), e.getMessage());
+            throw new ServiceException(HttpStatus.BAD_REQUEST.value(), e.getMessage());
         }
     }
 

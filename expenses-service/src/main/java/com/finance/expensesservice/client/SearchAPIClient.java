@@ -1,7 +1,8 @@
 package com.finance.expensesservice.client;
 
-import com.finance.expensesservice.domain.SearchTransactions;
-import com.finance.expensesservice.domain.Transaction;
+import com.finance.common.dto.SearchTransactions;
+import com.finance.common.dto.Transaction;
+import com.finance.expensesservice.domain.ExpensesTransaction;
 import org.springframework.cloud.netflix.feign.FeignClient;
 import org.springframework.web.bind.annotation.*;
 
@@ -17,9 +18,9 @@ public interface SearchAPIClient {
     void indexTransactions(@RequestBody SearchTransactions searchTransactions);
 
     @GetMapping(value = "/transactions/categories/{categoryId}/search")
-    List<Transaction> searchTransactions(@PathVariable(name = "categoryId") Integer categoryId,
-                                         @RequestParam(value = "description") String description,
-                                         @RequestParam(value = "size") Integer size);
+    List<ExpensesTransaction> searchTransactions(@PathVariable(name = "categoryId") Integer categoryId,
+                                                             @RequestParam(value = "description") String description,
+                                                             @RequestParam(value = "size") Integer size);
 
     @PutMapping(value = "/transactions/update")
     void updateTransactionsIndex(@RequestBody SearchTransactions searchTransactions);

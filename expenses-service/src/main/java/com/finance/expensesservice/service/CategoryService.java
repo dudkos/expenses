@@ -1,7 +1,7 @@
 package com.finance.expensesservice.service;
 
+import com.finance.common.exception.ServiceException;
 import com.finance.expensesservice.domain.Category;
-import com.finance.expensesservice.exception.ExpensesServiceException;
 
 import java.util.List;
 
@@ -10,19 +10,19 @@ import java.util.List;
  */
 public interface CategoryService {
 
-    Category findCategoryById(Integer id, boolean withTransactions) throws ExpensesServiceException;
+    Category findCategoryById(Integer id, boolean withTransactions) throws ServiceException;
 
-    Category findCategoryByName(String name, boolean withTransactions) throws ExpensesServiceException;
+    Category findCategoryByName(String name, boolean withTransactions) throws ServiceException;
 
-    Category findDefaultCategory(boolean withTransactions) throws ExpensesServiceException;
+    Category findDefaultCategory(boolean withTransactions) throws ServiceException;
 
-    List<Category> findCategories() throws ExpensesServiceException;
+    List<Category> findCategories() throws ServiceException;
 
-    Category updateCategory(Integer categoryId, Category expensesCategory) throws ExpensesServiceException;
+    Category updateCategory(Integer categoryId, Category expensesCategory) throws ServiceException;
 
     void update(Category expensesCategory);
 
-    Category createCategory(Category expensesCategory) throws ExpensesServiceException;
+    Category createCategory(Category expensesCategory) throws ServiceException;
 
-    void deleteCategory(Integer categoryId) throws ExpensesServiceException;
+    void deleteCategory(Integer categoryId) throws ServiceException;
 }

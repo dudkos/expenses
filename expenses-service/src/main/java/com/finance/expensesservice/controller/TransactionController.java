@@ -1,7 +1,6 @@
 package com.finance.expensesservice.controller;
 
-import com.finance.expensesservice.client.SearchAPIClient;
-import com.finance.expensesservice.domain.Transaction;
+import com.finance.expensesservice.domain.ExpensesTransaction;
 import com.finance.expensesservice.service.TransactionService;
 import com.finance.expensesservice.util.ExpensesServiceConstants;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,13 +20,9 @@ public class TransactionController implements ExpensesServiceConstants {
 
     private final TransactionService transactionService;
 
-    private final SearchAPIClient searchAPIClient;
-
     @Autowired
-    public TransactionController(TransactionService transactionService,
-                                 SearchAPIClient searchAPIClient) {
+    public TransactionController(TransactionService transactionService) {
         this.transactionService = transactionService;
-        this.searchAPIClient = searchAPIClient;
     }
 
     @RequestMapping(value = "/upload", method = RequestMethod.POST)
@@ -43,7 +38,7 @@ public class TransactionController implements ExpensesServiceConstants {
     }
 
     @GetMapping(value = "/categories/{categoryId}/transactions")
-    public List<Transaction> findExpensesTransactions(@PathVariable Integer categoryId) {
+    public List<ExpensesTransaction> findExpensesTransactions(@PathVariable Integer categoryId) {
         return transactionService.findTransactions(categoryId, ORDER_DESC);
     }
 
@@ -52,12 +47,6 @@ public class TransactionController implements ExpensesServiceConstants {
                                                           @RequestBody List<Integer> transactionIds) {
         transactionService.addTransactionsToCategory(categoryId, transactionIds);
         return new ResponseEntity<>(HttpStatus.OK);
-    }
-
-    @GetMapping(value = "/categories/{categoryId}/search")
-    public List<Transaction> searchTransactions(@PathVariable Integer categoryId,
-                                                @RequestParam(value = "description") String description) {
-        return searchAPIClient.searchTransactions(categoryId, description, null);
     }
 
     @PutMapping(value = "/categories/{categoryId}/search")

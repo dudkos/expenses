@@ -17,13 +17,13 @@ public interface CategoryDAO extends CrudRepository<Category, Integer> {
     @Query("SELECT c FROM Category c WHERE c.userId =:userId and c.id =:categoryId")
     Category findCategoryById(@Param("userId") Integer userId, @Param("categoryId") Integer categoryId);
 
-    @Query("SELECT DISTINCT c FROM Category c LEFT OUTER JOIN FETCH c.transactions as t  WHERE c.userId =:userId and c.id =:categoryId")
+    @Query("SELECT DISTINCT c FROM Category c LEFT OUTER JOIN FETCH c.expensesTransactions as t  WHERE c.userId =:userId and c.id =:categoryId")
     Category findCategoryByIdWithTr(@Param("userId") Integer userId, @Param("categoryId") Integer categoryId);
 
     @Query("SELECT c FROM Category c WHERE c.userId =:userId and c.name =:name")
     Category findCategoryByName(@Param("userId") Integer userId, @Param("name") String name);
 
-    @Query("SELECT c FROM Category c LEFT OUTER JOIN FETCH c.transactions as t WHERE c.userId =:userId and c.name =:name")
+    @Query("SELECT c FROM Category c LEFT OUTER JOIN FETCH c.expensesTransactions as t WHERE c.userId =:userId and c.name =:name")
     Category findCategoryByNameWithTr(@Param("userId") Integer userId, @Param("name") String name);
 
     @Query("SELECT c FROM Category c WHERE c.userId =:userId ORDER BY c.lastModification ASC")
