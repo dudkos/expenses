@@ -2,6 +2,7 @@ package com.finance.expensesservice.domain;
 
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.finance.common.dto.Transaction;
 
 import javax.persistence.*;
 import java.io.Serializable;
@@ -11,7 +12,7 @@ import java.sql.Timestamp;
  * Created by siarh on 25/02/2017.
  */
 @MappedSuperclass
-public abstract class Base implements Serializable {
+public abstract class Base extends Transaction implements Serializable {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

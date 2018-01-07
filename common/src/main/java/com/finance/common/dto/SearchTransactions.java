@@ -5,11 +5,14 @@ public class SearchTransactions {
 
     private Integer categoryId;
 
-    private List<Transaction> expensesTransactions;
+    private List<Transaction> transactions;
 
-    public SearchTransactions(Integer categoryId, List<Transaction> expensesTransactions) {
+    public SearchTransactions() {
+    }
+
+    public SearchTransactions(Integer categoryId, List<Transaction> transactions) {
         this.categoryId = categoryId;
-        this.expensesTransactions = expensesTransactions;
+        this.transactions = transactions;
     }
 
     public Integer getCategoryId() {
@@ -20,11 +23,11 @@ public class SearchTransactions {
         this.categoryId = categoryId;
     }
 
-    public List<Transaction> getExpensesTransactions() {
-        return expensesTransactions;
+    public List<Transaction> getTransactions() {
+        return transactions;
     }
 
-    public void setExpensesTransactions(List<Transaction> expensesTransactions) {
-        this.expensesTransactions = expensesTransactions;
+    public void setTransactions(List<Transaction> transactions) {
+        this.transactions = transactions;
     }
 }

@@ -1,6 +1,5 @@
 package com.finanse.search.api.service;
 
-import com.finance.common.context.UserContext;
 import com.finance.common.dto.SearchTransactions;
 import com.finance.common.dto.Transaction;
 import com.finance.common.exception.ServiceException;
@@ -37,26 +36,23 @@ public class TransactionsSearchServiceImpl implements TransactionsSearchService,
 
     private final TransportClient transportClient;
 
-    private final UserContext userContext;
-
     private final static SimpleDateFormat sdf = new SimpleDateFormat(DATE_PATTERN);
 
     @Value("${elasticsearch.response.size.default}")
     private Integer defaultSize;
 
     @Autowired
-    public TransactionsSearchServiceImpl(TransportClient transportClient, UserContext userContext) {
+    public TransactionsSearchServiceImpl(TransportClient transportClient) {
         this.transportClient = transportClient;
-        this.userContext = userContext;
     }
 
     @Override
-    public void indexTransactions(SearchTransactions searchTransactions) {
+    public void indexTransactions(Integer userId, SearchTransactions searchTransactions) {
 
-        isInputDataValid(searchTransactions);
+        isInputDataValid(userId, searchTransactions);
 
         BulkRequestBuilder requestBuilder = transportClient.prepareBulk();
-        searchTransactions.getExpensesTransactions().forEach(v -> createSingleIndex(userContext.getUserId(), searchTransactions.getCategoryId(), v, requestBuilder));
+        searchTransactions.getTransactions().forEach(v -> createSingleIndex(userId, searchTransactions.getCategoryId(), v, requestBuilder));
 
         BulkResponse bulkResponse = requestBuilder.get();
         if (bulkResponse.hasFailures()) {
@@ -64,16 +60,16 @@ public class TransactionsSearchServiceImpl implements TransactionsSearchService,
         }
 
         logger.info("{} transactions for user with id {} have been added to the index",
-                searchTransactions.getExpensesTransactions().size(), userContext.getUserId());
+                searchTransactions.getTransactions().size(), userId);
     }
 
     @Override
-    public void updateTransactions(SearchTransactions searchTransactions) {
+    public void updateTransactions(Integer userId, SearchTransactions searchTransactions) {
 
-        isInputDataValid(searchTransactions);
+        isInputDataValid(userId, searchTransactions);
 
         BulkRequestBuilder requestBuilder = transportClient.prepareBulk();
-        searchTransactions.getExpensesTransactions().forEach(v -> updateSingleIndex(v, searchTransactions.getCategoryId(), requestBuilder));
+        searchTransactions.getTransactions().forEach(v -> updateSingleIndex(v, searchTransactions.getCategoryId(), requestBuilder));
         BulkResponse bulkResponse = requestBuilder.get();
 
         if (bulkResponse.hasFailures()) {
@@ -81,7 +77,7 @@ public class TransactionsSearchServiceImpl implements TransactionsSearchService,
         }
 
         logger.info("{} transactions for user with id {} have been updated in index",
-                searchTransactions.getExpensesTransactions().size(), userContext.getUserId());
+                searchTransactions.getTransactions().size(), userId);
     }
 
     @Override
@@ -107,10 +103,9 @@ public class TransactionsSearchServiceImpl implements TransactionsSearchService,
     }
 
     @Override
-    public List<Transaction> searchTransactions(Integer categoryId, String desc, Integer size) {
-
+    public List<Transaction> searchTransaction(Integer userId, Integer categoryId, String desc, Integer size) {
         try {
-            isInputParametersValid(userContext.getUserId(), categoryId);
+            isInputParametersValid(userId, categoryId);
         } catch (ServiceException e) {
             logger.error(e.getMessage());
             return new ArrayList<>();
@@ -119,7 +114,7 @@ public class TransactionsSearchServiceImpl implements TransactionsSearchService,
         SearchResponse response = transportClient.prepareSearch(TRANSACTION_INDEX)
                 .setTypes(TRANSACTION_TYPE)
                 .setQuery(QueryBuilders.boolQuery()
-                        .must(QueryBuilders.termQuery(USER_ID, userContext.getUserId()))
+                        .must(QueryBuilders.termQuery(USER_ID, userId))
                         .must(QueryBuilders.termQuery(CATEGORY_ID, categoryId))
                         .must(QueryBuilders.fuzzyQuery(DESCRIPTION, desc)))
                 .setSize(size == null ? defaultSize : size)
@@ -162,38 +157,18 @@ public class TransactionsSearchServiceImpl implements TransactionsSearchService,
 
     private Transaction convertToExpensesTransaction(String transactionId, Map<String, Object> source) {
         if(transactionId != null) {
-            return new Transaction() {
-                @Override
-                public Integer getId() {
-                    return Integer.valueOf(transactionId);
-                }
+            Transaction transaction = new Transaction();
+            transaction.setAmount(BigDecimal.valueOf(Double.valueOf(source.get(AMOUNT).toString())));
+            transaction.setCurrencyCode(source.get(CODE).toString());
+            transaction.setDescription(source.get(DESCRIPTION).toString());
+            transaction.setId(Integer.valueOf(transactionId));
+            try {
+                transaction.setTransactionDate(new Timestamp(sdf.parse(source.get(DATE).toString()).getTime()));
+            } catch (ParseException e) {
+                logger.error("can't parse date - " + e.getMessage());
+            }
 
-                @Override
-                public String getCurrencyCode() {
-                    return source.get(CODE).toString();
-                }
-
-                @Override
-                public Timestamp getTransactionDate() {
-                    try {
-                        return new Timestamp(sdf.parse(source.get(DATE).toString()).getTime());
-                    } catch (ParseException e) {
-                        logger.error("can't parse date - " + e.getMessage());
-                    }
-
-                    return null;
-                }
-
-                @Override
-                public BigDecimal getAmount() {
-                    return BigDecimal.valueOf(Double.valueOf(source.get(AMOUNT).toString()));
-                }
-
-                @Override
-                public String getDescription() {
-                    return source.get(DESCRIPTION).toString();
-                }
-            };
+            return transaction;
         }
 
         return null;
@@ -218,9 +193,9 @@ public class TransactionsSearchServiceImpl implements TransactionsSearchService,
         isCategoryIdValid(categoryId);
     }
 
-    private void isInputDataValid(SearchTransactions searchTransactions) {
+    private void isInputDataValid(Integer userId, SearchTransactions searchTransactions) {
         isInputSearchTransactionsValid(searchTransactions);
-        isInputParametersValid(userContext.getUserId(), searchTransactions.getCategoryId());
+        isInputParametersValid(userId, searchTransactions.getCategoryId());
     }
 
     private void isCategoryIdValid(Integer categoryId) {
@@ -232,7 +207,7 @@ public class TransactionsSearchServiceImpl implements TransactionsSearchService,
     private void isInputSearchTransactionsValid(SearchTransactions searchTransactions) {
         if(searchTransactions == null) {
             throw new ServiceException(400, "Bad request. Request body is - null");
-        } else if (searchTransactions.getExpensesTransactions().isEmpty()) {
+        } else if (searchTransactions.getTransactions().isEmpty()) {
             throw new ServiceException(400, "Bad request. Please check request body.");
         }
     }

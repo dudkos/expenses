@@ -97,7 +97,7 @@ public class TransactionServiceImpl implements TransactionService, ApplicationCo
     @Transactional
     public void deleteAllTransactions() {
         transactionDAO.deleteAllTransactions(userContext.getUserId());
-        searchAPIClient.deleteAllUserTransactionsFromIndex();
+        searchAPIClient.deleteAllUserTransactionsFromIndex(userContext.getUserId());
     }
 
     @Override
@@ -120,7 +120,7 @@ public class TransactionServiceImpl implements TransactionService, ApplicationCo
         List<ExpensesTransaction> expensesTransactions = transactionDAO.findTransactionsByIds(userContext.getUserId(), transactionsIds);
 
         if(saveTransactionsToCategory(category, expensesTransactions))
-            searchAPIClient.updateTransactionsIndex(new SearchTransactions(category.getId(), cast(expensesTransactions)));
+            searchAPIClient.updateTransactionsIndex(userContext.getUserId(), new SearchTransactions(category.getId(), cast(expensesTransactions)));
     }
 
     @Override
@@ -144,7 +144,7 @@ public class TransactionServiceImpl implements TransactionService, ApplicationCo
     }
 
     private List<Integer> findTransactionsIdsFromIndex(String desc, Integer categoryId) {
-        List<ExpensesTransaction> result = searchAPIClient.searchTransactions(categoryId, desc, 100);
+        List<ExpensesTransaction> result = searchAPIClient.searchTransactions(userContext.getUserId(), categoryId, desc);
         return CollectionUtils.isEmpty(result) ? Collections.emptyList() :
                 result.stream()
                         .map(Transaction :: getId)
@@ -167,7 +167,7 @@ public class TransactionServiceImpl implements TransactionService, ApplicationCo
         List<ExpensesTransaction> transactionsToAdd = prepareTransactionsToAdd(oldExpensesTransactions, newExpensesTransactions);
         logger.info("Going to add {} transactions of {} to db", transactionsToAdd.size(), newExpensesTransactions.size());
         if(!CollectionUtils.isEmpty(transactionsToAdd) && saveTransactionsToCategory(category, transactionsToAdd)) {
-            searchAPIClient.indexTransactions(new SearchTransactions(category.getId(), cast(findTransactions(category.getId(), null))));
+            searchAPIClient.indexTransactions(userContext.getUserId(), new SearchTransactions(category.getId(), cast(findTransactions(category.getId(), null))));
         }
     }
 

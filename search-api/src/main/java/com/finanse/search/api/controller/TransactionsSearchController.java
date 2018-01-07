@@ -5,6 +5,7 @@ import com.finance.common.dto.SearchTransactions;
 import com.finance.common.dto.Transaction;
 import com.finanse.search.api.service.TransactionsSearchService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -15,6 +16,12 @@ import java.util.List;
 @RestController
 @RequestMapping("/transactions/")
 public class TransactionsSearchController {
+
+    @Value("${gui.search.result.size}")
+    private Integer guiSearchResultSize;
+
+    @Value("${server.search.result.size}")
+    private Integer serverSearchResultSize;
 
     private TransactionsSearchService transactionsSearchService;
 
@@ -27,35 +34,41 @@ public class TransactionsSearchController {
         this.userContext = userContext;
     }
 
-    //@PreAuthorize("#oauth2.hasScope('server')")
+    @PreAuthorize("#oauth2.hasAnyScope('gui')")
     @RequestMapping(value = "categories/{categoryId}/search", method = RequestMethod.GET)
     public List<Transaction> searchTransactions(@PathVariable Integer categoryId,
-                                                @RequestParam(value = "description") String description,
-                                                @RequestParam(value = "size", required = false) Integer size) {
-        return transactionsSearchService.searchTransactions(categoryId, description, size);
+                                                @RequestParam(value = "description") String description) {
+        return transactionsSearchService.searchTransaction(userContext.getUserId(), categoryId, description, guiSearchResultSize);
     }
 
-    @RequestMapping(value = "/index", method = RequestMethod.PUT)
-    public ResponseEntity<Void> indexTransactions(@RequestBody SearchTransactions searchTransactions) {
-        transactionsSearchService.indexTransactions(searchTransactions);
+    @PreAuthorize("#oauth2.hasAnyScope('server')")
+    @RequestMapping(value = "{userId}/categories/{categoryId}/search", method = RequestMethod.GET)
+    public List<Transaction> searchTransactions(@PathVariable Integer userId,
+                                                @PathVariable Integer categoryId,
+                                                @RequestParam(value = "description") String description) {
+        return transactionsSearchService.searchTransaction(userId, categoryId, description, serverSearchResultSize);
+    }
+
+    @PreAuthorize("#oauth2.hasScope('server')")
+    @RequestMapping(value = "{userId}/index", method = RequestMethod.PUT)
+    public ResponseEntity<Void> indexTransactions(@PathVariable Integer userId,
+                                                  @RequestBody SearchTransactions searchTransactions) {
+        transactionsSearchService.indexTransactions(userId, searchTransactions);
         return new ResponseEntity<>(HttpStatus.OK);
     }
 
-    @RequestMapping(value = "/update", method = RequestMethod.PUT)
-    public ResponseEntity<Void> updateTransactionsIndex(@RequestBody SearchTransactions searchTransactions) {
-        transactionsSearchService.updateTransactions(searchTransactions);
+    @PreAuthorize("#oauth2.hasScope('server')")
+    @RequestMapping(value = "{userId}/update", method = RequestMethod.PUT)
+    public ResponseEntity<Void> updateTransactionsIndex(@PathVariable Integer userId,
+                                                        @RequestBody SearchTransactions searchTransactions) {
+        transactionsSearchService.updateTransactions(userId, searchTransactions);
         return new ResponseEntity<>(HttpStatus.OK);
     }
 
-    @RequestMapping(value = "/delete", method = RequestMethod.DELETE)
-    public ResponseEntity<Void> deleteAllTransactionsFromIndex() {
-        transactionsSearchService.deleteFromIndexByUserId(userContext.getUserId());
+    @PreAuthorize("#oauth2.hasScope('server')")
+    @RequestMapping(value = "{userId}/delete", method = RequestMethod.DELETE)
+    public ResponseEntity<Void> deleteAllTransactionsFromIndex(@PathVariable Integer userId) {
+        transactionsSearchService.deleteFromIndexByUserId(userId);
         return new ResponseEntity<>(HttpStatus.OK);
-    }
-
-    @PreAuthorize("hasAuthority('ADMIN')")//@PreAuthorize("#oauth2.hasScope('server')")
-    @RequestMapping(value = "/ping", method = RequestMethod.GET)
-    public String ping() {
-        return "ping";
     }
 }

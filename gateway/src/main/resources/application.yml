@@ -32,20 +32,20 @@ zuul:
   routes:
     security-api:
         path: /auth/**
-#        url: http://localhost:8081
+#        serviceId: security-api
         url: http://localhost:8180/security-api
         sensitiveHeaders:
 
     search_api:
         path: /search/**
-#        serviceId: search-service
+#        serviceId: search-api
         url: http://localhost:8083/search-api
         sensitiveHeaders:
 
     expenses-service:
         path: /expenses/**
-#        url: http://localhost:8083/expenses-service
-        serviceId: expenses-service
+        url: http://localhost:8083/expenses-service
+#        serviceId: expenses-service
         sensitiveHeaders:
 
 server:

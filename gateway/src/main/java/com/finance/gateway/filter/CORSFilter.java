@@ -1,4 +1,4 @@
-package com.finanse.search.api;
+package com.finance.gateway.filter;
 
 
 import org.springframework.core.Ordered;

@@ -7,11 +7,11 @@ import java.util.List;
 
 public interface TransactionsSearchService {
 
-    void indexTransactions(SearchTransactions searchTransactions);
+    void indexTransactions(Integer userId, SearchTransactions searchTransactions);
 
-    void updateTransactions(SearchTransactions searchTransactions);
+    void updateTransactions(Integer userId, SearchTransactions searchTransactions);
 
     void deleteFromIndexByUserId(Integer userId);
 
-    List<Transaction> searchTransactions(Integer categoryId, String desc, Integer size);
+    List<Transaction> searchTransaction(Integer userId, Integer categoryId, String desc, Integer size);
 }
