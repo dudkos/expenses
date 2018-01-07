@@ -1,7 +1,6 @@
 package com.finance.expensesservice.domain;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.finance.common.dto.Transaction;
 
 import javax.persistence.*;
 import java.io.Serializable;
@@ -13,7 +12,7 @@ import java.sql.Timestamp;
  */
 @Entity
 @Table(name = "EXPENSES_TRANSACTION")
-public class ExpensesTransaction extends Base implements Transaction, Serializable {
+public class ExpensesTransaction extends Base implements Serializable {
 
     @Column(name = "ACCOUNT_NUMBER")
     private String accountNumber;

@@ -1,0 +1,51 @@
+spring:
+  # Cloud. Need to be unique
+  application:
+    name: security-api
+  # Same JVM. Need to be unique
+  jmx:
+    default-domain: ${spring.application.name}
+  jpa:
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.Oracle12cDialect
+
+eureka:
+  client:
+    serviceUrl:
+      defaultZone: http://localhost:8180/registry/eureka/
+#      defaultZone: http://localhost:8082/eureka/
+
+token :
+  timeout: 3600
+db:
+  url: jdbc:oracle:thin:@//localhost:1521/dudko
+  user: SYSTEM
+  password: dudko1985
+
+logging:
+  level:
+    org:
+      hibernate:
+        SQL: DEBUG
+        type:
+          descriptor:
+            sql:
+              BasicBinder: TRACE
+      springframework:
+              security: DEBUG
+
+server:
+  port: 8081
+
+security:
+  oauth2:
+    resource:
+      filter-order: 3
+
+expenses:
+  service:
+    password: expenses_password
+
+gui:
+  password: gui_password

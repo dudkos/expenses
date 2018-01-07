@@ -139,7 +139,7 @@ public class CategoryServiceImpl implements CategoryService {
             Category defaultCategory = findDefaultCategory(true);
             defaultCategory.addAll(expensesTransactions);
             categoryDAO.save(defaultCategory);
-            searchAPIClient.updateTransactionsIndex(new SearchTransactions(defaultCategory.getId(), cast(expensesTransactions)));
+            searchAPIClient.updateTransactionsIndex(userContext.getUserId(), new SearchTransactions(defaultCategory.getId(), cast(expensesTransactions)));
         }
 
         categoryDAO.delete(category);
