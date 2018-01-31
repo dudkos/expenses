@@ -13,13 +13,16 @@ import java.util.List;
 
 public abstract class CalculationTemplate {
 
+    private List<ExpensesTransaction> expensesTransactions;
+
     abstract String getPeriodValue(Calendar calendar);
 
-    public final List<TransactionResult> transactionResult(List<ExpensesTransaction> expensesTransactions) {
+    public final List<TransactionResult> transactionResult() {
         List<TransactionResult> transactionResults = new ArrayList<>();
-        expensesTransactions.forEach(v -> updateTransactionResult(transactionResults, v));
-        calculateTotal(transactionResults);
-
+        if(!CollectionUtils.isEmpty(expensesTransactions)) {
+            expensesTransactions.forEach(v -> updateTransactionResult(transactionResults, v));
+            calculateTotal(transactionResults);
+        }
         return transactionResults;
     }
 
@@ -62,5 +65,9 @@ public abstract class CalculationTemplate {
     private void calculateTotal(List<TransactionResult> transactionResults) {
         if(!CollectionUtils.isEmpty(transactionResults)) transactionResults
                 .forEach(v-> v.setResult(v.getTotalCreditAmount().negate().add(v.getTotalDebitAmount())));
+    }
+
+    public void setExpensesTransactions(List<ExpensesTransaction> expensesTransactions) {
+        this.expensesTransactions = expensesTransactions;
     }
 }

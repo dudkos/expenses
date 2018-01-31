@@ -6,6 +6,7 @@ import com.finance.expensesservice.util.ExpensesServiceConstants;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import java.util.List;
@@ -31,14 +32,15 @@ public class TransactionController implements ExpensesServiceConstants {
         return new ResponseEntity<>(HttpStatus.OK);
     }
 
+    @PreAuthorize("hasAuthority('ADMIN')")
     @DeleteMapping(value = "/transactions")
-    public ResponseEntity<Void> deleteAllExpensesTransactions() {
+    public ResponseEntity<Void> deleteAllTransactions() {
         transactionService.deleteAllTransactions();
         return new ResponseEntity<>(HttpStatus.OK);
     }
 
     @GetMapping(value = "/categories/{categoryId}/transactions")
-    public List<ExpensesTransaction> findExpensesTransactions(@PathVariable Integer categoryId) {
+    public List<ExpensesTransaction> findTransactions(@PathVariable Integer categoryId) {
         return transactionService.findTransactions(categoryId, ORDER_DESC);
     }
 

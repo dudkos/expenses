@@ -42,6 +42,8 @@ security:
   oauth2:
     resource:
       filter-order: 3
+    client:
+      access-token-validity-seconds: 120
 
 expenses:
   service:
