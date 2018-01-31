@@ -1,12 +1,11 @@
 package com.finance.expensesservice.service;
 
-import com.finance.common.exception.ServiceException;
 import com.finance.expensesservice.dto.Chart;
 import com.finance.expensesservice.dto.ChartData;
 import com.finance.expensesservice.dto.TransactionResult;
 import com.finance.expensesservice.util.calculation.CalculationFactory;
+import com.finance.expensesservice.util.calculation.CalculationTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -18,21 +17,18 @@ import java.util.List;
 @Service
 public class ExpensesServiceImpl implements ExpensesService {
 
-    private final TransactionService expensesTransactionService;
+    private final TransactionService transactionService;
 
     @Autowired
     public ExpensesServiceImpl(TransactionService expensesTransactionService) {
-        this.expensesTransactionService = expensesTransactionService;
+        this.transactionService = expensesTransactionService;
     }
 
     @Override
     public List<TransactionResult> getTransactionsCalculation(Integer categoryId, String order, String period) {
-        try {
-            return CalculationFactory.calculationTemplate(period)
-                    .transactionResult(expensesTransactionService.findTransactions(categoryId, order));
-        } catch (Exception e) {
-            throw new ServiceException(HttpStatus.BAD_REQUEST.value(), e.getMessage());
-        }
+        CalculationTemplate calculationTemplate = new CalculationFactory().calculationTemplate(period);
+        calculationTemplate.setExpensesTransactions(transactionService.findTransactions(categoryId, order));
+        return calculationTemplate.transactionResult();
     }
 
     @Override

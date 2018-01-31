@@ -37,5 +37,7 @@ public interface ExpensesServiceConstants {
         String BY_MONTH = "byMonth";
 
         String BY_YEAR = "byYear";
+
+        String BY_ALL = "byAll";
     }
 }

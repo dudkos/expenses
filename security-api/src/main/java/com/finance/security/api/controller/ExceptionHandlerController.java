@@ -18,9 +18,5 @@ public class ExceptionHandlerController {
     public ResponseEntity<ServiceError> handleInvalidGrantException(InvalidGrantException e) {
         logger.error("message {} oauth2 code {}", e.getMessage(), e.getOAuth2ErrorCode());
         return new ResponseEntity<>(new ServiceError(e.getMessage(), e.getOAuth2ErrorCode()), HttpStatus.valueOf(e.getHttpErrorCode()));
-
     }
-
-
-
 }
